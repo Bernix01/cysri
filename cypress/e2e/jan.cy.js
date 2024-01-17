@@ -8,6 +8,7 @@ const downloadsFolder = Cypress.config("downloadsFolder");
 const year = "2023";
 // 0 is all - 1 is invoices - 2 is credit notes
 const docType = "1";
+const startMonth = 4; // 0 based
 describe("invoice download xml", () => {
   beforeEach(() => {
     cy.login(Cypress.env("USER"), Cypress.env("PASS"));
@@ -31,6 +32,9 @@ describe("invoice download xml", () => {
   it("download all months", async function () {
     cy.wrap(Array(12)).as("months");
     cy.get("@months").each((month, monthIndex, $list) => {
+      if (monthIndex < startMonth) {
+        return;
+      }
       cy.get("#id-sri-splash", { timeout: 10000 }).should("not.exist");
       cy.wait(3000 + Math.random() * 7000);
 
@@ -42,7 +46,13 @@ describe("invoice download xml", () => {
 
       cy.get("#frmPrincipal\\:ano").select(year);
       cy.wait(200 + Math.random() * 700);
-      cy.get("#frmPrincipal\\:mes").select(monthIndex); // month is 0 based
+      cy.get("#frmPrincipal\\:mes").select(`${monthIndex + 1}`); // month is 0 based
+      cy.wait(200 + Math.random() * 700);
+      cy.get("#frmPrincipal\\:dia").select("0"); // all days
+      cy.wait(500 + Math.random() * 700);
+      cy.get("#frmPrincipal\\:ano").select(year);
+      cy.wait(200 + Math.random() * 700);
+      cy.get("#frmPrincipal\\:mes").select(`${monthIndex + 1}`); // month is 0 based
       cy.wait(200 + Math.random() * 700);
       cy.get("#frmPrincipal\\:dia").select("0"); // all days
       cy.wait(500 + Math.random() * 700);
@@ -56,6 +66,11 @@ describe("invoice download xml", () => {
         timeout: 180000, // so you can complete captcha if asked to
       }).should("be.visible");
       cy.log("captcha passed");
+
+      // revalidation
+      cy.get("#frmPrincipal\\:ano").should("have.value", year);
+      cy.get("#frmPrincipal\\:mes").should("have.value", `${monthIndex + 1}`);
+      cy.get("#frmPrincipal\\:dia").should("have.value", "0");
 
       cy.get(
         "#frmPrincipal\\:tablaCompRecibidos_paginator_bottom > .ui-paginator-rpp-options"
@@ -79,30 +94,32 @@ describe("invoice download xml", () => {
           .find("tr")
           .each(($el, index, $list) => {
             // get invoice number
-            cy.get(`tr:nth-child(${index + 1}) > td:nth-child(3) > div`).then(
-              ($el) => {
-                const text = $el.text().replace(" ", "_");
-                cy.wrap(text).as(`invoiceNumber`);
-              }
-            );
+            cy.get(`tr:nth-child(${index + 1}) > td:nth-child(3) > div`, {
+              log: false,
+            }).then(($el) => {
+              const text = $el.text().trim().replace(/\s+/g, "_");
+              cy.wrap(text).as(`invoiceNumber`);
+            });
 
-            cy.get("@invoiceNumber").then((invoiceNumber) => {
+            cy.get("@invoiceNumber", { log: false }).then((invoiceNumber) => {
               // check if file exists
               cy.exec(
                 `[ -f ${downloadsFolder}/${monthIndex}-${invoiceNumber}.xml ] && echo "file exists"`,
-                { failOnNonZeroExit: false }
+                { failOnNonZeroExit: false, log: false }
               ).then((stdout) => {
                 const exists = stdout.stdout === "file exists";
                 cy.wrap(exists).as(`fileExists`);
               });
 
               //process row
-              cy.get(`@fileExists`).then((exists) => {
+              cy.get(`@fileExists`, { log: false }).then((exists) => {
                 if (!exists) {
                   cy.get(
-                    `#frmPrincipal\\:tablaCompRecibidos\\:${index}\\:lnkXml`
+                    `#frmPrincipal\\:tablaCompRecibidos\\:${75*pageIndex+index}\\:lnkXml`
                   ).click();
-                  cy.readFile(`${downloadsFolder}/Factura.xml`).should("exist");
+                  // cy.readFile(`${downloadsFolder}/Factura.xml`, {
+                  //   log: false,
+                  // }).should("exist");
                   cy.fsRename({
                     newPath: `${downloadsFolder}/${monthIndex}-${invoiceNumber}.xml`,
                     path: `${downloadsFolder}/Factura.xml`,
@@ -117,6 +134,7 @@ describe("invoice download xml", () => {
           cy.get(
             "#frmPrincipal\\:tablaCompRecibidos_paginator_bottom > .ui-paginator-next"
           ).click();
+          cy.wait(5000);
         }
       });
     });
