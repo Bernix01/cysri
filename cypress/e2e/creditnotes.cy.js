@@ -7,9 +7,9 @@ Cypress.on("uncaught:exception", (err, runnable) => {
 const downloadsFolder = Cypress.config("downloadsFolder");
 const year = "2023";
 // 0 is all - 1 is invoices - 2 is credit notes
-const docType = "1";
-const startMonth = 4; // 0 based
-describe("invoice download xml", () => {
+const startMonth = 10; // 0 based
+
+describe("download the year xml", () => {
   beforeEach(() => {
     cy.login(Cypress.env("USER"), Cypress.env("PASS"));
     cy.visit("/sri-en-linea/contribuyente/perfil");
@@ -29,7 +29,8 @@ describe("invoice download xml", () => {
     );
   });
 
-  it("download all months", async function () {
+  it("download all credit notes", async function () {
+    const docType = "3";
     cy.wrap(Array(12)).as("months");
     cy.get("@months").each((month, monthIndex, $list) => {
       if (monthIndex < startMonth) {
@@ -71,7 +72,6 @@ describe("invoice download xml", () => {
       cy.get("#frmPrincipal\\:ano").should("have.value", year);
       cy.get("#frmPrincipal\\:mes").should("have.value", `${monthIndex + 1}`);
       cy.get("#frmPrincipal\\:dia").should("have.value", "0");
-
       cy.get(
         "#frmPrincipal\\:tablaCompRecibidos_paginator_bottom > .ui-paginator-rpp-options"
       ).select("75");
@@ -115,14 +115,16 @@ describe("invoice download xml", () => {
               cy.get(`@fileExists`, { log: false }).then((exists) => {
                 if (!exists) {
                   cy.get(
-                    `#frmPrincipal\\:tablaCompRecibidos\\:${75*pageIndex+index}\\:lnkXml`
+                    `#frmPrincipal\\:tablaCompRecibidos\\:${
+                      75 * pageIndex + index
+                    }\\:lnkXml`
                   ).click();
                   // cy.readFile(`${downloadsFolder}/Factura.xml`, {
                   //   log: false,
                   // }).should("exist");
                   cy.fsRename({
                     newPath: `${downloadsFolder}/${monthIndex}-${invoiceNumber}.xml`,
-                    path: `${downloadsFolder}/Factura.xml`,
+                    path: `${downloadsFolder}/Notas de_`,
                   });
                 }
               });
