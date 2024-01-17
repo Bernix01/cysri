@@ -42,10 +42,10 @@ describe("invoice download xml", () => {
 
       cy.get("#frmPrincipal\\:ano").select(year);
       cy.wait(200 + Math.random() * 700);
-      cy.get("#frmPrincipal\\:mes").select(monthIndex + 1); // month is 1 based
+      cy.get("#frmPrincipal\\:mes").select(monthIndex); // month is 0 based
       cy.wait(200 + Math.random() * 700);
       cy.get("#frmPrincipal\\:dia").select("0"); // all days
-      cy.wait(200 + Math.random() * 700);
+      cy.wait(500 + Math.random() * 700);
       cy.get("#frmPrincipal\\:cmbTipoComprobante").select(docType);
       cy.wait(200 + Math.random() * 700);
 
@@ -89,7 +89,7 @@ describe("invoice download xml", () => {
             cy.get("@invoiceNumber").then((invoiceNumber) => {
               // check if file exists
               cy.exec(
-                `[ -f ${downloadsFolder}/${invoiceNumber}.xml ] && echo "file exists"`,
+                `[ -f ${downloadsFolder}/${monthIndex}-${invoiceNumber}.xml ] && echo "file exists"`,
                 { failOnNonZeroExit: false }
               ).then((stdout) => {
                 const exists = stdout.stdout === "file exists";
@@ -104,7 +104,7 @@ describe("invoice download xml", () => {
                   ).click();
                   cy.readFile(`${downloadsFolder}/Factura.xml`).should("exist");
                   cy.fsRename({
-                    newPath: `${downloadsFolder}/${invoiceNumber}.xml`,
+                    newPath: `${downloadsFolder}/${monthIndex}-${invoiceNumber}.xml`,
                     path: `${downloadsFolder}/Factura.xml`,
                   });
                 }
