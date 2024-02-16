@@ -5,8 +5,7 @@ Cypress.on("uncaught:exception", (err, runnable) => {
 });
 
 const downloadsFolder = Cypress.config("downloadsFolder");
-const year = "2023";
-// 0 is all - 1 is invoices - 2 is credit notes
+const year = "2024";
 const startMonth = 0; // 0 based
 
 describe("download the year xml", () => {
@@ -33,7 +32,11 @@ describe("download the year xml", () => {
     const docType = "1";
     cy.wrap(Array(12)).as("months");
     cy.get("@months").each((month, monthIndex, $list) => {
-      if (monthIndex < startMonth) {
+      if (
+        monthIndex < startMonth ||
+        (monthIndex > new Date().getMonth() &&
+          parseInt(year) === new Date().getFullYear())
+      ) {
         return;
       }
       cy.get("#id-sri-splash", { timeout: 10000 }).should("not.exist");
