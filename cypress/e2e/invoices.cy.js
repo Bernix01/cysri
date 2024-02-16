@@ -122,9 +122,6 @@ describe("download the year xml", () => {
                       75 * pageIndex + index
                     }\\:lnkXml`
                   ).click();
-                  // cy.readFile(`${downloadsFolder}/Factura.xml`, {
-                  //   log: false,
-                  // }).should("exist");
                   cy.fsRename({
                     newPath: `${downloadsFolder}/${monthIndex}-${invoiceNumber}.xml`,
                     path: `${downloadsFolder}/Factura.xml`,
